@@ -22,3 +22,6 @@ df = pd.read_csv('data.csv')
 
 # データフレームの型を確認
 print(type(df))
+
+#clear!
+print("aa")
