@@ -5,9 +5,12 @@ import pandas as pd
 from pydub import AudioSegment
 import tempfile
 
-def determine_trim_timings(num :int, df :DataFrame, delay : float, video_length : float):
+MAX_DELAY = 1.75
+VIDEO_LENGTH = 20
+
+def determine_trim_timings(num :int, df, delay : float, video_length : float):
     end_time = df['end_time_sec'].iloc[num]
-    if end_time - df['start_time_sec'].iloc[num] + delay > video_length:
+    if (end_time - df['start_time_sec'].iloc[num] + delay > video_length) or (num == 0):
         return end_time, df['start_time_sec'].iloc[num]
     for k in range(0, num):
     	if end_time - df['start_time_sec'].iloc[num - k] + delay > video_length:
@@ -89,32 +92,38 @@ def merge_audio_and_video(video_file, audio_file, output_file):
         print(f"Error occurred: {e.stderr}")
 
 
-delay_df = pd.read_csv('shift_timing.csv') #path名は絶対でも相対でも可
-audio_df = pd.read_csv('')
 
-source_video_file_path = '' #cut前のvideo
-source_audio_file_path = ''
+#ファイルの読み込み
+video_df = pd.read_csv('/home/takamichi-lab3/kenkyu/FF1/audio_commentary_annotations.csv')
+delay_df = pd.read_csv('/home/takamichi-lab3/kenkyu/FF1/shift_timing.csv') #path名は絶対でも相対でも可
 
-for video_csv_num in range():
-    start_time, end_time = determine_trim_timings(num :int, df :DataFrame, delay : float, video_length : float)
-    for seg_row = next(segReader)
-    #現在使っているid,delaytimeを元に最終的な出力ファイル名を決定
-    outputfile_path = f"output_id{}_delay{}.mp4"
 
-    # 一時ファイルを作成して、それぞれの関数で使用する
-    with tempfile.NamedTemporaryFile(suffix=".mp4", delete=False) as video_temp_file, \
-        tempfile.NamedTemporaryFile(suffix=".wav", delete=False) as audio_temp_file:
+source_video_file_path = '/home/takamichi-lab3/kenkyu/FF1/gameplay_video.mp4' #cut前のvideo
+source_audio_file_path = '/home/takamichi-lab3/kenkyu/FF1/audio_commentary.wav'
+
+for video_csv_num in range(0, len(video_df)):
+    start_time, end_time = determine_trim_timings(video_csv_num, video_df, MAX_DELAY, VIDEO_LENGTH)
+    for delay_csv_num in range(0, len(delay_df)):
+        #現在使っているid,delaytimeを元に最終的な出力ファイル名を決定
+        output_file_path = f"output_id{video_df['segment_id'].iloc[video_csv_num]}_delay{delay_df['audio_delay_sec'].iloc[delay_csv_num]}.mp4"
+
+        # 一時ファイルを作成して、それぞれの関数で使用する
+        with tempfile.NamedTemporaryFile(suffix=".mp4", delete=False) as video_temp_file, \
+            tempfile.NamedTemporaryFile(suffix=".wav", delete=False) as audio_temp_file:
     
-        # 一時ファイルのパスを取得
-        video_temp_file_path = video_temp_file.name
-        audio_temp_file_path = audio_temp_file.name
+            # 一時ファイルのパスを取得
+            video_temp_file_path = video_temp_file.name
+            audio_temp_file_path = audio_temp_file.name
 
-        #一時ファイルに途中経過を保存
-        cut_video(source_video_file_path, video_temp_file_path, start_time, str(cut_time))
-        extract_audio(source_audio_file_path, audio_temp_file_path, float(seg_row[2]) - float(delay_row[0]) + float(delay_row[1]), float(seg_row[3]) - float(delay_row[0]) + float(delay_row[1]))
+            #一時ファイルに途中経過を保存
+            duration_time = end_time - start_time
+            cut_video(source_video_file_path, video_temp_file_path, str(start_time), str(duration_time))
+            extract_audio(source_audio_file_path, audio_temp_file_path, start_time - delay_df['audio_delay_sec'].iloc[delay_csv_num], end_time - delay_df['audio_delay_sec'].iloc[delay_csv_num])
 
-        #出力した一時ファイルを用いて動画を出力
-        merge_audio_and_video(video_temp_file_path, audio_temp_file_path, seg_row[4])
+            #出力した一時ファイルを用いて動画を出力
+            merge_audio_and_video(video_temp_file_path, audio_temp_file_path, output_file_path)
+    print(video_csv_num)
+    print(delay_csv_num)
 
 
 
