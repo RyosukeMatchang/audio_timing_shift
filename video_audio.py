@@ -5,16 +5,24 @@ import pandas as pd
 from pydub import AudioSegment
 import tempfile
 
-MAX_DELAY = 1.75
+MAX_DELAY = 2.25
 VIDEO_LENGTH = 20
+
+#ファイルの読み込み
+video_df = pd.read_csv('/home/takamichi-lab3/kenkyu/FF1/audio_commentary_annotations.csv')
+delay_df = pd.read_csv('/home/takamichi-lab3/kenkyu/FF1/shift_timing.csv') #path名は絶対でも相対でも可
+
+
+source_video_file_path = '/home/takamichi-lab3/kenkyu/FF1/gameplay_video.mp4' #cut前のvideo
+source_audio_file_path = '/home/takamichi-lab3/kenkyu/FF1/audio_commentary.wav'
 
 def determine_trim_timings(num :int, df, delay : float, video_length : float):
     end_time = df['end_time_sec'].iloc[num]
-    if (end_time - df['start_time_sec'].iloc[num] + delay > video_length) or (num == 0):
-        return end_time, df['start_time_sec'].iloc[num]
-    for k in range(0, num):
+    if (end_time - df['start_time_sec'].iloc[num] + delay > video_length):
+        return df['start_time_sec'].iloc[num], end_time
+    for k in range(0, num + 1):
     	if end_time - df['start_time_sec'].iloc[num - k] + delay > video_length:
-            return end_time, df['start_time_sec'].iloc[num - k + 1]
+            return df['start_time_sec'].iloc[num - k + 1], end_time
     return df['start_time_sec'].iloc[num - k], end_time
 
 
@@ -93,13 +101,6 @@ def merge_audio_and_video(video_file, audio_file, output_file):
 
 
 
-#ファイルの読み込み
-video_df = pd.read_csv('/home/takamichi-lab3/kenkyu/FF1/audio_commentary_annotations.csv')
-delay_df = pd.read_csv('/home/takamichi-lab3/kenkyu/FF1/shift_timing.csv') #path名は絶対でも相対でも可
-
-
-source_video_file_path = '/home/takamichi-lab3/kenkyu/FF1/gameplay_video.mp4' #cut前のvideo
-source_audio_file_path = '/home/takamichi-lab3/kenkyu/FF1/audio_commentary.wav'
 
 for video_csv_num in range(0, len(video_df)):
     start_time, end_time = determine_trim_timings(video_csv_num, video_df, MAX_DELAY, VIDEO_LENGTH)
@@ -116,14 +117,16 @@ for video_csv_num in range(0, len(video_df)):
             audio_temp_file_path = audio_temp_file.name
 
             #一時ファイルに途中経過を保存
-            duration_time = end_time - start_time
+            duration_time = end_time - start_time + MAX_DELAY
+            audio_start = start_time - delay_df['audio_delay_sec'].iloc[delay_csv_num]
             cut_video(source_video_file_path, video_temp_file_path, str(start_time), str(duration_time))
-            extract_audio(source_audio_file_path, audio_temp_file_path, start_time - delay_df['audio_delay_sec'].iloc[delay_csv_num], end_time - delay_df['audio_delay_sec'].iloc[delay_csv_num])
+            extract_audio(source_audio_file_path, audio_temp_file_path, audio_start, audio_start + duration_time)
 
             #出力した一時ファイルを用いて動画を出力
             merge_audio_and_video(video_temp_file_path, audio_temp_file_path, output_file_path)
     print(video_csv_num)
     print(delay_csv_num)
+print("done")
 
 
 
