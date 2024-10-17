@@ -1,7 +1,7 @@
 #!/bin/bash
 
 # 移動先のディレクトリ
-DESTINATION="../FF1/output_files"
+DESTINATION="../MM8/output_files"
 
 # ディレクトリが存在しない場合は作成
 if [ ! -d "$DESTINATION" ]; then

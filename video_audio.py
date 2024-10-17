@@ -4,17 +4,18 @@ import os
 import pandas as pd
 from pydub import AudioSegment
 import tempfile
+import multiprocessing as mp
 
 MAX_DELAY = 2.25
 VIDEO_LENGTH = 20
 
 #ファイルの読み込み
-video_df = pd.read_csv('/home/takamichi-lab3/kenkyu/FF1/audio_commentary_annotations.csv')
-delay_df = pd.read_csv('/home/takamichi-lab3/kenkyu/FF1/shift_timing.csv') #path名は絶対でも相対でも可
+video_df = pd.read_csv('/home/takamichi-lab3/kenkyu/MM8/audio_commentary_annotations.csv')
+delay_df = pd.read_csv('/home/takamichi-lab3/kenkyu/MM8/shift_timing.csv') #path名は絶対でも相対でも可
 
 
-source_video_file_path = '/home/takamichi-lab3/kenkyu/FF1/gameplay_video.mp4' #cut前のvideo
-source_audio_file_path = '/home/takamichi-lab3/kenkyu/FF1/audio_commentary.wav'
+source_video_file_path = '/home/takamichi-lab3/kenkyu/MM8/gameplay_video.mp4' #cut前のvideo
+source_audio_file_path = '/home/takamichi-lab3/kenkyu/MM8/audio_commentary.wav'
 
 def determine_trim_timings(num :int, df, delay : float, video_length : float):
     end_time = df['end_time_sec'].iloc[num]
@@ -102,10 +103,37 @@ def merge_audio_and_video(video_file, audio_file, output_file):
 
 
 
-for video_csv_num in range(0, len(video_df)):
+# for video_csv_num in range(0, len(video_df)):
+#     start_time, end_time = determine_trim_timings(video_csv_num, video_df, MAX_DELAY, VIDEO_LENGTH)
+#     for delay_csv_num in range(0, len(delay_df)):
+#         #現在使っているid,delaytimeを元に最終的な出力ファイル名を決定
+#         output_file_path = f"output_id{video_df['segment_id'].iloc[video_csv_num]}_delay{delay_df['audio_delay_sec'].iloc[delay_csv_num]}.mp4"
+
+#         # 一時ファイルを作成して、それぞれの関数で使用する
+#         with tempfile.NamedTemporaryFile(suffix=".mp4", delete=False) as video_temp_file, \
+#             tempfile.NamedTemporaryFile(suffix=".wav", delete=False) as audio_temp_file:
+    
+#             # 一時ファイルのパスを取得
+#             video_temp_file_path = video_temp_file.name
+#             audio_temp_file_path = audio_temp_file.name
+
+#             #一時ファイルに途中経過を保存
+#             duration_time = end_time - start_time + MAX_DELAY
+#             audio_start = start_time - delay_df['audio_delay_sec'].iloc[delay_csv_num]
+#             cut_video(source_video_file_path, video_temp_file_path, str(start_time), str(duration_time))
+#             extract_audio(source_audio_file_path, audio_temp_file_path, audio_start, audio_start + duration_time)
+
+#             #出力した一時ファイルを用いて動画を出力
+#             merge_audio_and_video(video_temp_file_path, audio_temp_file_path, output_file_path)
+#     print(video_csv_num)
+#     print(delay_csv_num)
+# print("done")
+
+
+def process_segment(video_csv_num):
     start_time, end_time = determine_trim_timings(video_csv_num, video_df, MAX_DELAY, VIDEO_LENGTH)
     for delay_csv_num in range(0, len(delay_df)):
-        #現在使っているid,delaytimeを元に最終的な出力ファイル名を決定
+        # 現在使っているid, delaytimeを元に最終的な出力ファイル名を決定
         output_file_path = f"output_id{video_df['segment_id'].iloc[video_csv_num]}_delay{delay_df['audio_delay_sec'].iloc[delay_csv_num]}.mp4"
 
         # 一時ファイルを作成して、それぞれの関数で使用する
@@ -116,20 +144,29 @@ for video_csv_num in range(0, len(video_df)):
             video_temp_file_path = video_temp_file.name
             audio_temp_file_path = audio_temp_file.name
 
-            #一時ファイルに途中経過を保存
+            # 一時ファイルに途中経過を保存
             duration_time = end_time - start_time + MAX_DELAY
             audio_start = start_time - delay_df['audio_delay_sec'].iloc[delay_csv_num]
             cut_video(source_video_file_path, video_temp_file_path, str(start_time), str(duration_time))
             extract_audio(source_audio_file_path, audio_temp_file_path, audio_start, audio_start + duration_time)
 
-            #出力した一時ファイルを用いて動画を出力
+            # 出力した一時ファイルを用いて動画を出力
             merge_audio_and_video(video_temp_file_path, audio_temp_file_path, output_file_path)
-    print(video_csv_num)
-    print(delay_csv_num)
-print("done")
+    print(f"Video CSV num: {video_csv_num} processed")
 
 
+if __name__ == '__main__':
+    # プロセスの数を指定
+    num_processes = mp.cpu_count() - 1 # CPUのコア数を使用して並列処理
+    pool = mp.Pool(num_processes)
 
+    # 各ビデオセグメントの処理を並列に実行
+    pool.map(process_segment, range(len(video_df)))
+
+    pool.close()
+    pool.join()
+
+    print("All processes done")
 
 
 # import pandas as pd
