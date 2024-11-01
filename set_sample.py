@@ -2,7 +2,7 @@ import pandas as pd
 import random
 
 # CSVファイルを読み込み、元の行番号を保持
-df = pd.read_csv('combined_output.csv')  # 実際のファイル名に変更してください
+df = pd.read_csv('./comment_list2.csv')  # 実際のファイル名に変更してください
 df.reset_index(inplace=True)  # 元の行番号を保持
 df.rename(columns={'index': 'Row'}, inplace=True)  # 'Row'という列名に変更
 
@@ -43,7 +43,7 @@ while True:
 
     # 重複もなく、24個のセットが完成した場合のみ、選択したファイルを元の DataFrame から削除
     for row in rows:
-        result.append([row, set_group[rows.index(row)][1], set_group[rows.index(row)][2], f'Set{set_num}'])
+        result.append([row, set_group[rows.index(row)][1], set_group[rows.index(row)][2], f'Set(2){set_num}'])
         df = df[df['Row'] != row]
     
     # セット番号をインクリメント
@@ -51,6 +51,6 @@ while True:
 
 # 結果をDataFrameに変換して保存
 output_df = pd.DataFrame(result, columns=['Row', 'Filename', 'topic_tag', 'Set'])
-output_df.to_csv('files_with_sets.csv', index=False)
+output_df.to_csv('files_with_sets2.csv', index=False)
 
-print("指定された delay 値を2回ずつ含む 24個1セットのファイルが 'files_with_sets.csv' に保存されました。")
+print("指定された delay 値を2回ずつ含む 24個1セットのファイルが 'files_with_sets2.csv' に保存されました。")
