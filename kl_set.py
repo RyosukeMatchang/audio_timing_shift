@@ -39,8 +39,8 @@ def calculate_kl_divergence_sum(reference_proportions, set_proportions):
     return kl_divergence_sum
 
 # メイン処理
-file_path1 = './comment_list2.csv'  # 全体について読み込むCSVファイルのパス
-file_path2 = './files_with_sets2.csv'  # 各セットごとについて読み取るCSVファイルのパス
+file_path1 = './comment_list4.csv'  # 全体について読み込むCSVファイルのパス
+file_path2 = './files_with_sets4.csv'  # 各セットごとについて読み取るCSVファイルのパス
 
 df1 = pd.read_csv(file_path1)   # CSVファイルを読み込む
 df2 = pd.read_csv(file_path2)   # CSVファイルを読み込む
@@ -63,7 +63,7 @@ for set_value, group_df in df2.groupby('Set'):
 
 # 結果をデータフレームとして保存
 results_df = pd.DataFrame(results)
-output_path = './set_kl_divergences2.csv'
+output_path = './set_kl_divergences4.csv'
 results_df.to_csv(output_path, index=False)
 
 print(f"結果が '{output_path}' に保存されました。")

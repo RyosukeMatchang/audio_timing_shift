@@ -51,6 +51,6 @@ while True:
 
 # 結果をDataFrameに変換して保存
 output_df = pd.DataFrame(result, columns=['Row', 'Filename', 'topic_tag', 'Set'])
-output_df.to_csv('files_with_sets2.csv', index=False)
+output_df.to_csv('files_with_setsr2.csv', index=False)
 
-print("指定された delay 値を2回ずつ含む 24個1セットのファイルが 'files_with_sets2.csv' に保存されました。")
+print("指定された delay 値を2回ずつ含む 24個1セットのファイルが 'files_with_setsr2.csv' に保存されました。")
